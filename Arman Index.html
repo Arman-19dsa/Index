@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arman Index</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+        
+        // Lucide icons as inline SVG
+        const Activity = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+        );
+        
+        const TrendingUp = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                <polyline points="17 6 23 6 23 12"/>
+            </svg>
+        );
+        
+        const TrendingDown = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+                <polyline points="17 18 23 18 23 12"/>
+            </svg>
+        );
+        
+        const Plus = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        );
+        
+        const Minus = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        );
+
+        function ArmanIndex() {
+          const [indexValue, setIndexValue] = useState(80.00);
+          const [history, setHistory] = useState([{ value: 80.00, timestamp: Date.now() }]);
+          const [selectedPeriod, setSelectedPeriod] = useState('ALL');
+          
+          const periods = [
+            { label: '1D', ms: 24 * 60 * 60 * 1000 },
+            { label: '5D', ms: 5 * 24 * 60 * 60 * 1000 },
+            { label: '1W', ms: 7 * 24 * 60 * 60 * 1000 },
+            { label: '1M', ms: 30 * 24 * 60 * 60 * 1000 },
+            { label: 'ALL', ms: Infinity }
+          ];
+
+          const getFilteredHistory = () => {
+            if (selectedPeriod === 'ALL') return history;
+            
+            const period = periods.find(p => p.label === selectedPeriod);
+            const cutoffTime = Date.now() - period.ms;
+            return history.filter(h => h.timestamp >= cutoffTime);
+          };
+
+          const filteredHistory = getFilteredHistory();
+          const currentChange = filteredHistory.length > 1 
+            ? indexValue - filteredHistory[0].value 
+            : 0;
+          const percentChange = filteredHistory.length > 1 
+            ? ((currentChange / filteredHistory[0].value) * 100) 
+            : 0;
+          const isPositive = currentChange >= 0;
+
+          const handleIncrease = () => {
+            const randomIncrease = Math.random() * 5 + 1;
+            const newValue = parseFloat((indexValue + randomIncrease).toFixed(2));
+            setIndexValue(newValue);
+            setHistory([...history, { value: newValue, timestamp: Date.now() }]);
+          };
+
+          const handleDecrease = () => {
+            const randomDecrease = Math.random() * 5 + 1;
+            const newValue = parseFloat((indexValue - randomDecrease).toFixed(2));
+            setIndexValue(newValue);
+            setHistory([...history, { value: newValue, timestamp: Date.now() }]);
+          };
+
+          const handleReset = () => {
+            setIndexValue(80.00);
+            setHistory([{ value: 80.00, timestamp: Date.now() }]);
+            setSelectedPeriod('ALL');
+          };
+
+          const maxValue = Math.max(...filteredHistory.map(h => h.value));
+          const minValue = Math.min(...filteredHistory.map(h => h.value));
+          const allTimeHigh = Math.max(...history.map(h => h.value));
+          const allTimeLow = Math.min(...history.map(h => h.value));
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-8">
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <div className="w-10 h-10 text-blue-400"><Activity /></div>
+                    <h1 className="text-5xl font-bold text-white">ARMAN INDEX</h1>
+                  </div>
+                  <p className="text-slate-400 text-lg">Personal Growth Tracker</p>
+                </div>
+
+                <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 mb-6 border border-slate-700/50 shadow-2xl">
+                  <div className="text-center">
+                    <div className="text-7xl font-bold text-white mb-4">
+                      {indexValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    
+                    <div className={`inline-flex items-center gap-2 text-3xl font-semibold px-6 py-3 rounded-full ${
+                      isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      <div className="w-8 h-8">{isPositive ? <TrendingUp /> : <TrendingDown />}</div>
+                      <span>{isPositive ? '+' : ''}{currentChange.toFixed(2)}</span>
+                      <span>({isPositive ? '+' : ''}{percentChange.toFixed(2)}%)</span>
+                    </div>
+
+                    <div className="flex justify-center gap-2 mt-6">
+                      {periods.map((period) => (
+                        <button
+                          key={period.label}
+                          onClick={() => setSelectedPeriod(period.label)}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                            selectedPeriod === period.label
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                          }`}
+                        >
+                          {period.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-8 h-40 relative">
+                    <svg className="w-full h-full" viewBox="0 0 800 160">
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor={isPositive ? '#10b981' : '#ef4444'} stopOpacity="0.3" />
+                          <stop offset="100%" stopColor={isPositive ? '#10b981' : '#ef4444'} stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {filteredHistory.length > 1 && (
+                        <>
+                          <polyline
+                            fill="url(#gradient)"
+                            stroke="none"
+                            points={filteredHistory.map((item, i) => {
+                              const x = (i / (filteredHistory.length - 1)) * 800;
+                              const y = 160 - ((item.value - minValue) / (maxValue - minValue)) * 140;
+                              return `${x},${y}`;
+                            }).join(' ') + ` 800,160 0,160`}
+                          />
+                          <polyline
+                            fill="none"
+                            stroke={isPositive ? '#10b981' : '#ef4444'}
+                            strokeWidth="3"
+                            points={filteredHistory.map((item, i) => {
+                              const x = (i / (filteredHistory.length - 1)) * 800;
+                              const y = 160 - ((item.value - minValue) / (maxValue - minValue)) * 140;
+                              return `${x},${y}`;
+                            }).join(' ')}
+                          />
+                        </>
+                      )}
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+                    <div className="text-slate-400 text-sm mb-1">All-Time High</div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {allTimeHigh.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+                    <div className="text-slate-400 text-sm mb-1">All-Time Low</div>
+                    <div className="text-2xl font-bold text-red-400">
+                      {allTimeLow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+                    <div className="text-slate-400 text-sm mb-1">Total Events</div>
+                    <div className="text-2xl font-bold text-blue-400">
+                      {history.length - 1}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={handleIncrease}
+                    className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/50"
+                  >
+                    <div className="w-6 h-6"><Plus /></div>
+                    Increase
+                  </button>
+                  <button
+                    onClick={handleDecrease}
+                    className="flex items-center gap-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold px-8 py-4 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    <div className="w-6 h-6"><Minus /></div>
+                    Decrease
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center gap-3 bg-slate-700 hover:bg-slate-800 text-white font-semibold px-8 py-4 rounded-xl transition-all transform hover:scale-105 shadow-lg border border-slate-600"
+                  >
+                    Reset Index
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<ArmanIndex />, document.getElementById('root'));
+    </script>
+</body>
+</html>
